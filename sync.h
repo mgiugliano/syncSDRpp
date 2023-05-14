@@ -105,11 +105,30 @@ int SetFreq(int sockfd, long int freq)
 } // end SetFreq()
 //------------------------------------------------------------------------------
 
-int SetModulation(int sockfd, int bandwidth)
+char *GetModulation(int sockfd)
+{
+    char buf[BUFSIZE];
+    char *ptr;
+    char *token;
+
+    send_data(sockfd, "m\n");
+    receive_data(sockfd, buf);
+
+    if (strcmp(buf, "RPRT 1") == 0)
+        return "";
+
+    token = strtok(buf, "\n");
+    return token;
+} // end GetModulation()
+
+//------------------------------------------------------------------------------
+
+int SetModulation(int sockfd, char *mode, int bandwidth)
 {
     char buf[BUFSIZE];
     // the bandwidth is now a user/system based configurable variable
-    sprintf(buf, "M FM %d\n", bandwidth);
+    // sprintf(buf, "M FM %d\n", bandwidth);
+    sprintf(buf, "M %s %d\n", mode, bandwidth);
     send_data(sockfd, buf);
     receive_data(sockfd, buf);
 
@@ -181,3 +200,56 @@ long int GetFreq_rig(RIG *my_rig)
     return freq;
 } // end GetFreq_rig()
 //------------------------------------------------------------------------------
+
+char *GetModulation_rig(RIG *my_rig)
+{
+    // rmode (in theory) can be any of the following:
+    // RIG_MODE_NONE, RIG_MODE_AM, RIG_MODE_CW, RIG_MODE_USB, RIG_MODE_LSB,
+    // RIG_MODE_RTTY, RIG_MODE_FM, RIG_MODE_WFM, RIG_MODE_CWR, RIG_MODE_RTTYR,
+    // RIG_MODE_DSB, RIG_MODE_SAM, RIG_MODE_SSB, RIG_MODE_SSTV, RIG_MODE_FAX,
+    // RIG_MODE_PKTLSB, RIG_MODE_PKTUSB, RIG_MODE_PKTFM, RIG_MODE_ECSSUSB,
+    // RIG_MODE_ECSSLSB, RIG_MODE_FAXS, RIG_MODE_HELL, RIG_MODE_FSK, RIG_MODE_PAC,
+    // RIG_MODE_GTOR, RIG_MODE_THROB, RIG_MODE_MFSK, RIG_MODE_AFSK, RIG_MODE_DRM,
+    // RIG_MODE_SAL, RIG_MODE_SAT, RIG_MODE_TOR, RIG_MODE_ALE, RIG_MODE_OPDS,
+    // RIG_MODE_FLEX, RIG_MODE_MAX
+
+    int retcode;   /* generic return code from functions */
+    rmode_t rmode; /* radio mode of operation */
+    pbwidth_t width;
+
+    retcode = rig_get_mode(my_rig, RIG_VFO_CURR, &rmode, &width);
+    if (retcode != RIG_OK)
+    {
+        printf("rig_get_mode: error = %s\n", rigerror(retcode));
+        exit(2);
+    }
+
+    switch (rmode)
+    {
+    case RIG_MODE_AM:
+        // printf("RIG_MODE_AM\n");
+        return "AM";
+        break;
+    case RIG_MODE_FM:
+        // printf("RIG_MODE_FM\n");
+        return "FM";
+        break;
+    case RIG_MODE_CW:
+        // printf("RIG_MODE_CW\n");
+        return "CW";
+        break;
+    case RIG_MODE_CWR:
+        // printf("RIG_MODE_CWR\n");
+        return "CW";
+        break;
+    case RIG_MODE_USB:
+        // printf("RIG_MODE_USB\n");
+        return "USB";
+        break;
+    case RIG_MODE_LSB:
+        // printf("RIG_MODE_LSB\n");
+        return "LSB";
+        break;
+    }
+    return "AM";
+} // end GetModulation_rig()
